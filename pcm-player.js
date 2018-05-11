@@ -124,3 +124,5 @@ PCMPlayer.prototype.flush = function() {
     this.startTime += audioBuffer.duration;
     this.samples = new Float32Array();
 };
+
+module.exports = PCMPlayer;
