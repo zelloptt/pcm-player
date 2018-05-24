@@ -80,7 +80,7 @@ PCMPlayer.prototype.destroy = function() {
     if (this.interval) {
         clearInterval(this.interval);
     }
-    this.samples = null;
+    this.samples = new Float32Array();
     this.audioCtx.close();
     this.audioCtx = null;
 };
@@ -117,7 +117,6 @@ PCMPlayer.prototype.flush = function() {
     if (this.startTime < this.audioCtx.currentTime) {
         this.startTime = this.audioCtx.currentTime;
     }
-    console.log('start vs current '+this.startTime+' vs '+this.audioCtx.currentTime+' duration: '+audioBuffer.duration);
     bufferSource.buffer = audioBuffer;
     bufferSource.connect(this.gainNode);
     bufferSource.start(this.startTime);
