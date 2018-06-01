@@ -53,6 +53,9 @@ PCMPlayer.prototype.isTypedArray = function(data) {
 };
 
 PCMPlayer.prototype.feed = function(data) {
+    if (this.muted) {
+        return;
+    }
     if (!this.isTypedArray(data)) return;
     data = this.getFormatedValue(data);
     var tmp = new Float32Array(this.samples.length + data.length);
@@ -123,5 +126,9 @@ PCMPlayer.prototype.flush = function() {
     this.startTime += audioBuffer.duration;
     this.samples = new Float32Array();
 };
+
+PCMPlayer.prototype.mute = function(mute) {
+    this.muted = mute;
+}
 
 module.exports = PCMPlayer;
