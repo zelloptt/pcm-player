@@ -18,6 +18,29 @@ PCMPlayer.prototype.init = function(option) {
     this.createContext();
 };
 
+// https://hackernoon.com/unlocking-web-audio-the-smarter-way-8858218c0e09
+PCMPlayer.prototype.webAudioTouchUnlock = function (context) {
+    return new Promise(function (resolve, reject) {
+      if (context.state === 'suspended' && 'ontouchstart' in window) {
+        var unlock = function() {
+          context.resume().then(function() {
+              document.body.removeEventListener('touchstart', unlock);
+              document.body.removeEventListener('touchend', unlock);
+              resolve(true);
+            },
+            function (reason) {
+              reject(reason);
+            });
+        };
+        document.body.addEventListener('touchstart', unlock, false);
+        document.body.addEventListener('touchend', unlock, false);
+      }
+      else {
+        resolve(false);
+      }
+    });
+}
+
 PCMPlayer.prototype.getMaxValue = function () {
     var encodings = {
         '8bitInt': 128,
@@ -42,10 +65,14 @@ PCMPlayer.prototype.getTypedArray = function () {
 
 PCMPlayer.prototype.createContext = function() {
     this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    this.gainNode = this.audioCtx.createGain();
-    this.gainNode.gain.value = 1;
-    this.gainNode.connect(this.audioCtx.destination);
-    this.startTime = this.audioCtx.currentTime;
+    this.webAudioTouchUnlock(this.audioCtx).then(function () {
+      this.gainNode = this.audioCtx.createGain();
+      this.gainNode.gain.value = 1;
+      this.gainNode.connect(this.audioCtx.destination);
+      this.startTime = this.audioCtx.currentTime;
+    }.bind(this), function(error) {
+      console.error(error);
+    });
 };
 
 PCMPlayer.prototype.isTypedArray = function(data) {
