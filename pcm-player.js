@@ -39,7 +39,7 @@ PCMPlayer.prototype.webAudioTouchUnlock = function (context) {
         resolve(false);
       }
     });
-}
+};
 
 PCMPlayer.prototype.getMaxValue = function () {
     var encodings = {
@@ -47,7 +47,7 @@ PCMPlayer.prototype.getMaxValue = function () {
         '16bitInt': 32768,
         '32bitInt': 2147483648,
         '32bitFloat': 1
-    }
+    };
 
     return encodings[this.option.encoding] ? encodings[this.option.encoding] : encodings['16bitInt'];
 };
@@ -58,7 +58,7 @@ PCMPlayer.prototype.getTypedArray = function () {
         '16bitInt': Int16Array,
         '32bitInt': Int32Array,
         '32bitFloat': Float32Array
-    }
+    };
 
     return typedArrays[this.option.encoding] ? typedArrays[this.option.encoding] : typedArrays['16bitInt'];
 };
@@ -76,7 +76,7 @@ PCMPlayer.prototype.createContext = function() {
 };
 
 PCMPlayer.prototype.isTypedArray = function(data) {
-    return (data.byteLength && data.buffer && data.buffer.constructor == ArrayBuffer);
+    return (data.byteLength && data.buffer && data.buffer.constructor === ArrayBuffer);
 };
 
 PCMPlayer.prototype.feed = function(data) {
@@ -156,6 +156,10 @@ PCMPlayer.prototype.flush = function() {
 
 PCMPlayer.prototype.mute = function(mute) {
     this.muted = mute;
-}
+};
+
+PCMPlayer.prototype.setSampleRate = function(sampleRate) {
+  this.option.sampleRate = sampleRate;
+};
 
 module.exports = PCMPlayer;
