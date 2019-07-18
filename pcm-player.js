@@ -157,9 +157,7 @@ PCMPlayer.prototype.flush = function() {
     const feedCounter = this.feedCounter;
     const onendedCallback = this.onendedCallback;
     if (onendedCallback) {
-        bufferSource.onended = () => {
-            onendedCallback(feedCounter);
-        };
+        bufferSource.onended = () => onendedCallback(feedCounter);
     }
     this.startTime += audioBuffer.duration;
     this.samples = new Float32Array();
