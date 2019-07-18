@@ -1,8 +1,8 @@
-function PCMPlayer(option, callback) {
-    this.init(option, callback);
+function PCMPlayer(option, onendedCallback) {
+    this.init(option, onendedCallback);
 }
 
-PCMPlayer.prototype.init = function(option, callback) {
+PCMPlayer.prototype.init = function(option, onendedCallback) {
     var defaults = {
         encoding: '16bitInt',
         channels: 1,
@@ -15,7 +15,7 @@ PCMPlayer.prototype.init = function(option, callback) {
     this.interval = setInterval(this.flush, this.option.flushingTime);
     this.maxValue = this.getMaxValue();
     this.typedArray = this.getTypedArray();
-    this.callback = callback;
+    this.onendedCallback = onendedCallback;
     this.feedCounter = 0;
     this.createContext();
 };
@@ -156,8 +156,8 @@ PCMPlayer.prototype.flush = function() {
     bufferSource.start(this.startTime);
     const feedCounter = this.feedCounter;
     bufferSource.onended = () => {
-        if (this.callback) {
-            this.callback.apply(this, [feedCounter]);
+        if (this.onendedCallback) {
+            this.onendedCallback.apply(this, [feedCounter]);
         }
     };
     this.startTime += audioBuffer.duration;
