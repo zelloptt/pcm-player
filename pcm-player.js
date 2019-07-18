@@ -1,8 +1,8 @@
-function PCMPlayer(option) {
-    this.init(option);
+function PCMPlayer(option, callback) {
+    this.init(option, callback);
 }
 
-PCMPlayer.prototype.init = function(option) {
+PCMPlayer.prototype.init = function(option, callback) {
     var defaults = {
         encoding: '16bitInt',
         channels: 1,
@@ -15,29 +15,31 @@ PCMPlayer.prototype.init = function(option) {
     this.interval = setInterval(this.flush, this.option.flushingTime);
     this.maxValue = this.getMaxValue();
     this.typedArray = this.getTypedArray();
+    this.callback = callback;
+    this.feedCounter = 0;
     this.createContext();
 };
 
 // https://hackernoon.com/unlocking-web-audio-the-smarter-way-8858218c0e09
 PCMPlayer.prototype.webAudioTouchUnlock = function (context) {
     return new Promise(function (resolve, reject) {
-      if (context.state === 'suspended' && 'ontouchstart' in window) {
-        var unlock = function() {
-          context.resume().then(function() {
-              document.body.removeEventListener('touchstart', unlock);
-              document.body.removeEventListener('touchend', unlock);
-              resolve(true);
-            },
-            function (reason) {
-              reject(reason);
-            });
-        };
-        document.body.addEventListener('touchstart', unlock, false);
-        document.body.addEventListener('touchend', unlock, false);
-      }
-      else {
-        resolve(false);
-      }
+        if (context.state === 'suspended' && 'ontouchstart' in window) {
+            var unlock = function() {
+                context.resume().then(function() {
+                      document.body.removeEventListener('touchstart', unlock);
+                      document.body.removeEventListener('touchend', unlock);
+                      resolve(true);
+                  },
+                  function (reason) {
+                      reject(reason);
+                  });
+            };
+            document.body.addEventListener('touchstart', unlock, false);
+            document.body.addEventListener('touchend', unlock, false);
+        }
+        else {
+            resolve(false);
+        }
     });
 };
 
@@ -66,12 +68,12 @@ PCMPlayer.prototype.getTypedArray = function () {
 PCMPlayer.prototype.createContext = function() {
     this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     this.webAudioTouchUnlock(this.audioCtx).then(function () {
-      this.gainNode = this.audioCtx.createGain();
-      this.gainNode.gain.value = 1;
-      this.gainNode.connect(this.audioCtx.destination);
-      this.startTime = this.audioCtx.currentTime;
+        this.gainNode = this.audioCtx.createGain();
+        this.gainNode.gain.value = 1;
+        this.gainNode.connect(this.audioCtx.destination);
+        this.startTime = this.audioCtx.currentTime;
     }.bind(this), function(error) {
-      console.error(error);
+        console.error(error);
     });
 };
 
@@ -89,12 +91,13 @@ PCMPlayer.prototype.feed = function(data) {
     tmp.set(this.samples, 0);
     tmp.set(data, this.samples.length);
     this.samples = tmp;
+    this.feedCounter++;
 };
 
 PCMPlayer.prototype.getFormatedValue = function(data) {
     var data = new this.typedArray(data.buffer),
-        float32 = new Float32Array(data.length),
-        i;
+      float32 = new Float32Array(data.length),
+      i;
 
     for (i = 0; i < data.length; i++) {
         float32[i] = data[i] / this.maxValue;
@@ -111,6 +114,7 @@ PCMPlayer.prototype.destroy = function() {
         clearInterval(this.interval);
     }
     this.samples = new Float32Array();
+    this.feedCounter = 0;
     this.audioCtx.close();
     this.audioCtx = null;
 };
@@ -118,13 +122,13 @@ PCMPlayer.prototype.destroy = function() {
 PCMPlayer.prototype.flush = function() {
     if (!this.samples.length) return;
     var bufferSource = this.audioCtx.createBufferSource(),
-        length = this.samples.length / this.option.channels,
-        audioBuffer = this.audioCtx.createBuffer(this.option.channels, length, this.option.sampleRate),
-        audioData,
-        channel,
-        offset,
-        i,
-        decrement;
+      length = this.samples.length / this.option.channels,
+      audioBuffer = this.audioCtx.createBuffer(this.option.channels, length, this.option.sampleRate),
+      audioData,
+      channel,
+      offset,
+      i,
+      decrement;
 
     for (channel = 0; channel < this.option.channels; channel++) {
         audioData = audioBuffer.getChannelData(channel);
@@ -143,15 +147,22 @@ PCMPlayer.prototype.flush = function() {
             offset += this.option.channels;
         }
     }
-    
+
     if (this.startTime < this.audioCtx.currentTime) {
         this.startTime = this.audioCtx.currentTime;
     }
     bufferSource.buffer = audioBuffer;
     bufferSource.connect(this.gainNode);
     bufferSource.start(this.startTime);
+    const feedCounter = this.feedCounter;
+    bufferSource.onended = () => {
+        if (this.callback) {
+            this.callback.apply(this, [feedCounter]);
+        }
+    };
     this.startTime += audioBuffer.duration;
     this.samples = new Float32Array();
+    this.feedCounter = 0;
 };
 
 PCMPlayer.prototype.mute = function(mute) {
@@ -159,7 +170,7 @@ PCMPlayer.prototype.mute = function(mute) {
 };
 
 PCMPlayer.prototype.setSampleRate = function(sampleRate) {
-  this.option.sampleRate = sampleRate;
+    this.option.sampleRate = sampleRate;
 };
 
 module.exports = PCMPlayer;
