@@ -2,7 +2,7 @@ function PCMPlayer(option, onendedCallback) {
     this.init(option, onendedCallback);
 }
 
-PCMPlayer.prototype.init = function(option, onendedCallback) {
+PCMPlayer.prototype.init = function(options, onendedCallback) {
     const defaults = {
         encoding: '16bitInt',
         channels: 1,
@@ -10,7 +10,7 @@ PCMPlayer.prototype.init = function(option, onendedCallback) {
         flushingTime: 1000,
         gain: 1
     };
-    this.options = Object.assign({}, defaults, option);
+    this.options = Object.assign({}, defaults, options);
     this.samples = new Float32Array([]);
     this.flush = this.flush.bind(this);
     this.interval = setInterval(this.flush, this.options.flushingTime);
