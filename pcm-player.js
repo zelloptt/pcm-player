@@ -7,7 +7,8 @@ PCMPlayer.prototype.init = function(option, onendedCallback) {
         encoding: '16bitInt',
         channels: 1,
         sampleRate: 8000,
-        flushingTime: 1000
+        flushingTime: 1000,
+        gain: 1
     };
     this.option = Object.assign({}, defaults, option);
     this.samples = new Float32Array();
@@ -69,7 +70,7 @@ PCMPlayer.prototype.createContext = function() {
     this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     this.webAudioTouchUnlock(this.audioCtx).then(function () {
         this.gainNode = this.audioCtx.createGain();
-        this.gainNode.gain.value = 1;
+        this.gainNode.gain.value = this.option.gain;
         this.gainNode.connect(this.audioCtx.destination);
         this.startTime = this.audioCtx.currentTime;
     }.bind(this), function(error) {
@@ -105,8 +106,9 @@ PCMPlayer.prototype.getFormatedValue = function(data) {
     return float32;
 };
 
-PCMPlayer.prototype.volume = function(volume) {
-    this.gainNode.gain.value = volume;
+PCMPlayer.prototype.setGain = function(gain) {
+    this.option.gain = gain;
+    this.gainNode.gain.value = gain;
 };
 
 PCMPlayer.prototype.destroy = function() {
