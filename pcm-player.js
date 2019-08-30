@@ -2,17 +2,18 @@ function PCMPlayer(option, onendedCallback) {
     this.init(option, onendedCallback);
 }
 
-PCMPlayer.prototype.init = function(option, onendedCallback) {
-    var defaults = {
+PCMPlayer.prototype.init = function(options, onendedCallback) {
+    const defaults = {
         encoding: '16bitInt',
         channels: 1,
         sampleRate: 8000,
-        flushingTime: 1000
+        flushingTime: 1000,
+        gain: 1
     };
-    this.option = Object.assign({}, defaults, option);
-    this.samples = new Float32Array();
+    this.options = Object.assign({}, defaults, options);
+    this.samples = new Float32Array([]);
     this.flush = this.flush.bind(this);
-    this.interval = setInterval(this.flush, this.option.flushingTime);
+    this.interval = setInterval(this.flush, this.options.flushingTime);
     this.maxValue = this.getMaxValue();
     this.typedArray = this.getTypedArray();
     this.onendedCallback = onendedCallback;
@@ -44,32 +45,32 @@ PCMPlayer.prototype.webAudioTouchUnlock = function (context) {
 };
 
 PCMPlayer.prototype.getMaxValue = function () {
-    var encodings = {
+    const encodings = {
         '8bitInt': 128,
         '16bitInt': 32768,
         '32bitInt': 2147483648,
         '32bitFloat': 1
     };
 
-    return encodings[this.option.encoding] ? encodings[this.option.encoding] : encodings['16bitInt'];
+    return encodings[this.options.encoding] ? encodings[this.options.encoding] : encodings['16bitInt'];
 };
 
 PCMPlayer.prototype.getTypedArray = function () {
-    var typedArrays = {
+    const typedArrays = {
         '8bitInt': Int8Array,
         '16bitInt': Int16Array,
         '32bitInt': Int32Array,
         '32bitFloat': Float32Array
     };
 
-    return typedArrays[this.option.encoding] ? typedArrays[this.option.encoding] : typedArrays['16bitInt'];
+    return typedArrays[this.options.encoding] ? typedArrays[this.options.encoding] : typedArrays['16bitInt'];
 };
 
 PCMPlayer.prototype.createContext = function() {
     this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     this.webAudioTouchUnlock(this.audioCtx).then(function () {
         this.gainNode = this.audioCtx.createGain();
-        this.gainNode.gain.value = 1;
+        this.gainNode.gain.value = this.options.gain;
         this.gainNode.connect(this.audioCtx.destination);
         this.startTime = this.audioCtx.currentTime;
     }.bind(this), function(error) {
@@ -86,34 +87,37 @@ PCMPlayer.prototype.feed = function(data) {
         return;
     }
     if (!this.isTypedArray(data)) return;
-    data = this.getFormatedValue(data);
-    var tmp = new Float32Array(this.samples.length + data.length);
+    data = this.getFormattedValue(data);
+    const tmp = new Float32Array(this.samples.length + data.length);
     tmp.set(this.samples, 0);
     tmp.set(data, this.samples.length);
     this.samples = tmp;
     this.feedCounter++;
 };
 
-PCMPlayer.prototype.getFormatedValue = function(data) {
-    var data = new this.typedArray(data.buffer),
-      float32 = new Float32Array(data.length),
-      i;
-
-    for (i = 0; i < data.length; i++) {
-        float32[i] = data[i] / this.maxValue;
+PCMPlayer.prototype.getFormattedValue = function(data) {
+    const typedData = new this.typedArray(data.buffer);
+    const float32Data = new Float32Array(typedData.length);
+    for (let i = 0; i < typedData.length; i++) {
+        float32Data[i] = typedData[i] / this.maxValue;
     }
-    return float32;
+    return float32Data;
 };
 
-PCMPlayer.prototype.volume = function(volume) {
-    this.gainNode.gain.value = volume;
+/**
+ * Sets the gain for the player.
+ * @param gain Desired playback gain. Expected range is [0, 1]
+ */
+PCMPlayer.prototype.setGain = function(gain) {
+    this.options.gain = gain;
+    this.gainNode.gain.value = gain;
 };
 
 PCMPlayer.prototype.destroy = function() {
     if (this.interval) {
         clearInterval(this.interval);
     }
-    this.samples = new Float32Array();
+    this.samples = new Float32Array([]);
     this.feedCounter = 0;
     this.audioCtx.close();
     this.audioCtx = null;
@@ -121,16 +125,16 @@ PCMPlayer.prototype.destroy = function() {
 
 PCMPlayer.prototype.flush = function() {
     if (!this.samples.length) return;
-    var bufferSource = this.audioCtx.createBufferSource(),
-      length = this.samples.length / this.option.channels,
-      audioBuffer = this.audioCtx.createBuffer(this.option.channels, length, this.option.sampleRate),
+    let bufferSource = this.audioCtx.createBufferSource(),
+      length = this.samples.length / this.options.channels,
+      audioBuffer = this.audioCtx.createBuffer(this.options.channels, length, this.options.sampleRate),
       audioData,
       channel,
       offset,
       i,
       decrement;
 
-    for (channel = 0; channel < this.option.channels; channel++) {
+    for (channel = 0; channel < this.options.channels; channel++) {
         audioData = audioBuffer.getChannelData(channel);
         offset = channel;
         decrement = 50;
@@ -144,7 +148,7 @@ PCMPlayer.prototype.flush = function() {
             if (i >= (length - 51)) {
                 audioData[i] =  (audioData[i] * decrement--) / 50;
             }
-            offset += this.option.channels;
+            offset += this.options.channels;
         }
     }
 
@@ -160,7 +164,7 @@ PCMPlayer.prototype.flush = function() {
         bufferSource.onended = () => onendedCallback(feedCounter);
     }
     this.startTime += audioBuffer.duration;
-    this.samples = new Float32Array();
+    this.samples = new Float32Array([]);
     this.feedCounter = 0;
 };
 
@@ -169,7 +173,7 @@ PCMPlayer.prototype.mute = function(mute) {
 };
 
 PCMPlayer.prototype.setSampleRate = function(sampleRate) {
-    this.option.sampleRate = sampleRate;
+    this.options.sampleRate = sampleRate;
 };
 
 module.exports = PCMPlayer;
