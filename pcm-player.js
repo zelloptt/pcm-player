@@ -11,6 +11,9 @@ PCMPlayer.prototype.init = function(options, onendedCallback) {
         gain: 1
     };
     this.options = Object.assign({}, defaults, options);
+    if (this.options.gain !== undefined && !this.isValidGain(this.options.gain)) {
+        this.options.gain = 1;
+    }
     this.samples = new Float32Array([]);
     this.flush = this.flush.bind(this);
     this.interval = setInterval(this.flush, this.options.flushingTime);
@@ -42,6 +45,10 @@ PCMPlayer.prototype.webAudioTouchUnlock = function (context) {
             resolve(false);
         }
     });
+};
+
+PCMPlayer.prototype.isValidGain = function (gain) {
+    return isFinite(gain) && gain <= 1 && gain >= 0;
 };
 
 PCMPlayer.prototype.getMaxValue = function () {
@@ -109,6 +116,9 @@ PCMPlayer.prototype.getFormattedValue = function(data) {
  * @param gain Desired playback gain. Expected range is [0, 1]
  */
 PCMPlayer.prototype.setGain = function(gain) {
+    if (!this.isValidGain(gain)) {
+        return false;
+    }
     this.options.gain = gain;
     this.gainNode.gain.value = gain;
 };
