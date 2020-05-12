@@ -29,6 +29,10 @@ function openSocket() {
         interval = setInterval(function() {
           sendData();
         }, 500);
+
+        ws.on('error', (err) => {
+          console.log(err);
+        });
   });
 }
 
