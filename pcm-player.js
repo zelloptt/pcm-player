@@ -21,7 +21,7 @@ PCMPlayer.prototype.init = function(options, onendedCallback) {
     this.typedArray = this.getTypedArray();
     this.onendedCallback = onendedCallback;
     this.feedCounter = 0;
-    options.useAudioElement ?  this.createContextWithElement() : this.createContext();
+    this.createContext();
 };
 
 // https://hackernoon.com/unlocking-web-audio-the-smarter-way-8858218c0e09
@@ -78,30 +78,25 @@ PCMPlayer.prototype.createContext = function() {
     this.webAudioTouchUnlock(this.audioCtx).then(function () {
         this.gainNode = this.audioCtx.createGain();
         this.gainNode.gain.value = this.options.gain;
-        this.gainNode.connect(this.audioCtx.destination);
+        this.options.useAudioElement
+        ? this.createAudioElement()
+        : this.gainNode.connect(this.audioCtx.destination);
         this.startTime = this.audioCtx.currentTime;
     }.bind(this), function(error) {
         console.error(error);
     });
 };
 
-PCMPlayer.prototype.createContextWithElement = function() {
-    this.audioCtx = new (window.AudioContext || window.webkitAudioConext)();
-    this.webAudioTouchUnlock(this.audioCtx).then(function () {
-        const destination = this.audioCtx.createMediaStreamDestination();
-        this.gainNode = this.audioCtx.createGain();
-        this.gainNode.gain.value = this.options.gain;
-        this.gainNode.connect(destination);
-        this.audioEl = new Audio();
-        this.audioEl.srcObject = destination.stream;
-        this.startTime = this.audioCtx.currentTime;
-        if (this.options.outputDeviceId) {
-            this.audioEl.setSinkId(this.options.outputDeviceId);
-        }
-        this.audioEl.play();         
-    }.bind(this), function(error) {
-        console.log(error);
-    }); 
+PCMPlayer.prototype.createAudioElement = function() {
+    const destination = this.audioCtx.createMediaStreamDestination();
+    this.gainNode.connect(destination);
+    this.audioEl = new Audio();
+    this.audioEl.srcObject = destination.stream;
+    this.startTime = this.audioCtx.currentTime;
+    if (this.options.outputDeviceId) {
+        this.audioEl.setSinkId(this.options.outputDeviceId);
+    }
+    this.audioEl.play(); 
 }
 
 PCMPlayer.prototype.isTypedArray = function(data) {
