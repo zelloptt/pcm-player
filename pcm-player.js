@@ -137,6 +137,12 @@ PCMPlayer.prototype.setGain = function(gain) {
     this.gainNode.gain.value = gain;
 };
 
+PCMPlayer.prototype.setSinkId = function(deviceId) {
+    if (this.audioEl) {
+        this.audioEl.setSinkId(deviceId);
+    }
+}
+
 PCMPlayer.prototype.destroy = function() {
     if (this.interval) {
         clearInterval(this.interval);
