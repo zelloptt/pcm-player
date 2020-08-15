@@ -2,6 +2,11 @@ function PCMPlayer(option, onendedCallback) {
     this.init(option, onendedCallback);
 }
 
+function getTimestampMs() {
+    var hrTime = process.hrtime();
+    return hrTime[0] * 1000 + hrTime[1] / 1000000;
+}
+
 PCMPlayer.prototype.init = function(options, onendedCallback) {
     const defaults = {
         encoding: '16bitInt',
@@ -16,7 +21,9 @@ PCMPlayer.prototype.init = function(options, onendedCallback) {
     }
     this.samples = new Float32Array([]);
     this.flush = this.flush.bind(this);
-    this.interval = setInterval(this.flush, this.options.flushingTime);
+    this.startTimestampMs = getTimestampMs();
+    this.flushTimeSyncMs = this.options.flushingTime;
+    this.flushTimer = setTimeout(this.flush, this.flushTimeSyncMs);
     this.maxValue = this.getMaxValue();
     this.typedArray = this.getTypedArray();
     this.onendedCallback = onendedCallback;
@@ -144,9 +151,12 @@ PCMPlayer.prototype.setSinkId = function(deviceId) {
 }
 
 PCMPlayer.prototype.destroy = function() {
-    if (this.interval) {
-        clearInterval(this.interval);
+    if (this.flushTimer) {
+        clearTimeout(this.flushTimer);
+        this.flushTimer = null;
     }
+    this.flushTimeSyncMs = 0;
+    this.startTimestampMs = 0;
     this.samples = new Float32Array([]);
     this.feedCounter = 0;
     this.audioCtx.close();
@@ -154,6 +164,14 @@ PCMPlayer.prototype.destroy = function() {
 };
 
 PCMPlayer.prototype.flush = function() {
+    this.flushTimeSyncMs += this.options.flushingTime;
+    let elapsedMs = getTimestampMs() - this.startTimestampMs;
+    let delayMs = this.flushTimeSyncMs - elapsedMs;
+    if (delayMs < 0 || delayMs > (this.options.flushingTime * 2)) {
+        delayMs = this.options.flushingTime
+    }
+    this.flushTimer = setTimeout(this.flush, delayMs);
+
     if (!this.samples.length) return;
     let bufferSource = this.audioCtx.createBufferSource(),
       length = this.samples.length / this.options.channels,
