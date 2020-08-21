@@ -3,8 +3,8 @@ function PCMPlayer(option, onendedCallback) {
 }
 
 function getTimestampMs() {
-    var hrTime = process.hrtime();
-    return hrTime[0] * 1000 + hrTime[1] / 1000000;
+    const now = new Date();
+    return now.getTime();
 }
 
 PCMPlayer.prototype.init = function(options, onendedCallback) {
