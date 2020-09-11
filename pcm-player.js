@@ -2,11 +2,6 @@ function PCMPlayer(option, onendedCallback) {
     this.init(option, onendedCallback);
 }
 
-function getTimestampMs() {
-    const now = new Date();
-    return now.getTime();
-}
-
 PCMPlayer.prototype.init = function(options, onendedCallback) {
     const defaults = {
         encoding: '16bitInt',
@@ -21,7 +16,7 @@ PCMPlayer.prototype.init = function(options, onendedCallback) {
     }
     this.samples = new Float32Array([]);
     this.flush = this.flush.bind(this);
-    this.startTimestampMs = getTimestampMs();
+    this.startTimestampMs = Date.now();
     this.flushTimeSyncMs = this.options.flushingTime;
     this.flushTimer = setTimeout(this.flush, this.flushTimeSyncMs);
     this.maxValue = this.getMaxValue();
@@ -165,7 +160,7 @@ PCMPlayer.prototype.destroy = function() {
 
 PCMPlayer.prototype.flush = function() {
     this.flushTimeSyncMs += this.options.flushingTime;
-    let elapsedMs = getTimestampMs() - this.startTimestampMs;
+    let elapsedMs = Date.now() - this.startTimestampMs;
     let delayMs = this.flushTimeSyncMs - elapsedMs;
     if (delayMs < 0 || delayMs > (this.options.flushingTime * 2)) {
         delayMs = this.options.flushingTime
