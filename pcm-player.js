@@ -50,7 +50,7 @@ PCMPlayer.prototype.webAudioTouchUnlock = function (context) {
 };
 
 PCMPlayer.prototype.isValidGain = function (gain) {
-    return isFinite(gain) && gain <= 1 && gain >= 0;
+    return isFinite(gain) && gain <= 2 && gain >= 0;
 };
 
 PCMPlayer.prototype.getMaxValue = function () {
@@ -129,7 +129,7 @@ PCMPlayer.prototype.getFormattedValue = function(data) {
 
 /**
  * Sets the gain for the player.
- * @param gain Desired playback gain. Expected range is [0, 1]
+ * @param gain Desired playback gain. Expected range is [0, 2]
  */
 PCMPlayer.prototype.setGain = function(gain) {
     if (!this.isValidGain(gain)) {
