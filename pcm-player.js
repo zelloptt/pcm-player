@@ -78,6 +78,9 @@ PCMPlayer.prototype.getTypedArray = function () {
 PCMPlayer.prototype.createContext = function() {
     this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     this.webAudioTouchUnlock(this.audioCtx).then(function () {
+        if (!this.audioCtx) {
+            return;
+        }
         this.gainNode = this.audioCtx.createGain();
         this.gainNode.gain.value = this.options.gain;
         this.options.useAudioElement
