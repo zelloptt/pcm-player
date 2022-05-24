@@ -12,7 +12,7 @@
   },
   "author": "Samir Das",
   "devDependencies": {
-    "uglify-js": "^3.3.23",
+    "uglify-js": "^3.15.5",
     "ws": "^3.3.0"
   },
   "dependencies": {}
