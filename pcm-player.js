@@ -1,8 +1,4 @@
-function PCMPlayer(option, onendedCallback) {
-    this.init(option, onendedCallback);
-}
-
-PCMPlayer.prototype.init = function(options, onendedCallback) {
+function PCMPlayer(options, onendedCallback) {
     const defaults = {
         encoding: '16bitInt',
         channels: 1,
@@ -23,7 +19,10 @@ PCMPlayer.prototype.init = function(options, onendedCallback) {
     this.typedArray = this.getTypedArray();
     this.onendedCallback = onendedCallback;
     this.feedCounter = 0;
-    this.createContext();
+}
+
+PCMPlayer.prototype.init = function() {
+    return this.createContext();
 };
 
 // https://hackernoon.com/unlocking-web-audio-the-smarter-way-8858218c0e09
@@ -77,7 +76,7 @@ PCMPlayer.prototype.getTypedArray = function () {
 
 PCMPlayer.prototype.createContext = function() {
     this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    this.webAudioTouchUnlock(this.audioCtx).then(function () {
+    return this.webAudioTouchUnlock(this.audioCtx).then(function () {
         if (!this.audioCtx) {
             return;
         }
@@ -87,9 +86,7 @@ PCMPlayer.prototype.createContext = function() {
         ? this.createAudioElement()
         : this.gainNode.connect(this.audioCtx.destination);
         this.startTime = this.audioCtx.currentTime;
-    }.bind(this), function(error) {
-        console.error(error);
-    });
+    }.bind(this));
 };
 
 PCMPlayer.prototype.createAudioElement = function() {
