@@ -1,4 +1,4 @@
-function PCMPlayer(options, onendedCallback) {
+function PCMPlayer(options, onendedCallback, onerrorCallback) {
     const defaults = {
         encoding: '16bitInt',
         channels: 1,
@@ -18,6 +18,7 @@ function PCMPlayer(options, onendedCallback) {
     this.maxValue = this.getMaxValue();
     this.typedArray = this.getTypedArray();
     this.onendedCallback = onendedCallback;
+    this.onerrorCallback = onerrorCallback;
     this.feedCounter = 0;
 }
 
@@ -168,6 +169,14 @@ PCMPlayer.prototype.flush = function() {
     this.flushTimer = setTimeout(this.flush, delayMs);
 
     if (!this.samples.length) return;
+    try {
+        this.playSamples();
+    } catch (err) {
+        this.onerrorCallback?.(err, this.samples);
+    }
+};
+
+PCMPlayer.prototype.playSamples = function () {
     let bufferSource = this.audioCtx.createBufferSource(),
       length = this.samples.length / this.options.channels,
       audioBuffer = this.audioCtx.createBuffer(this.options.channels, length, this.options.sampleRate),
