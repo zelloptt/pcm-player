@@ -152,6 +152,8 @@ PCMPlayer.prototype.reset = function() {
 
     if (this.bufferSource) {
         this.bufferSource.stop();
+        this.bufferSource.disconnect();
+        this.bufferSource = null;
     }
 };
 
