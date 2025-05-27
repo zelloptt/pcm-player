@@ -146,6 +146,13 @@ PCMPlayer.prototype.setSinkId = function(deviceId) {
     }
 }
 
+/**
+ * Resets the PCMPlayer to its initial state.
+ * 
+ * This method clears the sample buffer, resets the feed counter, and stops any
+ * active audio playback. It is useful for reinitializing the player without
+ * destroying it.
+ */
 PCMPlayer.prototype.reset = function() {
     this.samples = new Float32Array([]);
     this.feedCounter = 0;
