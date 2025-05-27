@@ -110,6 +110,7 @@ PCMPlayer.prototype.feed = function(data) {
         return;
     }
     if (!this.isTypedArray(data)) return;
+
     data = this.getFormattedValue(data);
     const tmp = new Float32Array(this.samples.length + data.length);
     tmp.set(this.samples, 0);
@@ -145,15 +146,34 @@ PCMPlayer.prototype.setSinkId = function(deviceId) {
     }
 }
 
+/**
+ * Resets the PCMPlayer to its initial state.
+ * 
+ * This method clears the sample buffer, resets the feed counter, and stops any
+ * active audio playback. It is useful for reinitializing the player without
+ * destroying it.
+ */
+PCMPlayer.prototype.reset = function() {
+    this.samples = new Float32Array([]);
+    this.feedCounter = 0;
+
+    if (this.bufferSource) {
+        this.bufferSource.stop();
+        this.bufferSource.disconnect();
+        this.bufferSource = null;
+    }
+};
+
 PCMPlayer.prototype.destroy = function() {
+    this.reset();
+
     if (this.flushTimer) {
         clearTimeout(this.flushTimer);
         this.flushTimer = null;
     }
     this.flushTimeSyncMs = 0;
     this.startTimestampMs = 0;
-    this.samples = new Float32Array([]);
-    this.feedCounter = 0;
+
     this.audioCtx.close();
     this.audioCtx = null;
 };
@@ -201,6 +221,9 @@ PCMPlayer.prototype.flush = function() {
     bufferSource.buffer = audioBuffer;
     bufferSource.connect(this.gainNode);
     bufferSource.start(this.startTime);
+
+    this.bufferSource = bufferSource;
+
     const feedCounter = this.feedCounter;
     const onendedCallback = this.onendedCallback;
     if (onendedCallback) {
